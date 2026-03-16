@@ -3,11 +3,11 @@
 'use strict';
 const ACCOUNT = { //账号相关，安全性更高
 
-  "user" : "", //博客后台用户名
-  "password" : "", //博客后台密码
+  "user" : "admin ", //博客后台用户名
+  "password" : "admin17", //博客后台密码
   "third_token" : "cfblog", //开放token，当前仅允许访问/admin/search.xml，/admin/sitemap.xml时可用，在cfblog_token的头信息中传递
   "cacheZoneId":"1ae06feafca1dbd9e406058de1c1c32f",//区域 ID
-  "cacheToken":"",//API token
+  "cacheToken":"Ufyw3C-MUsBTilR69-8Hn3o5XAYUWHLjZAYqqM1C",//API token
 
   "kv_var": this['CFBLOG'],//workers绑定kv时用的变量名
 }
@@ -15,7 +15,7 @@ const ACCOUNT = { //账号相关，安全性更高
 const OPT = { //网站配置
 
   /*--前台参数--*/
-  "siteDomain" : "blog.cccyyy.top",// 域名(不带https 也不带/)
+  "siteDomain" : "blog.2013.xyz",// 域名(不带https 也不带/)
   "siteName" : "CFBLOG-Plus",//博客名称
   "siteDescription":"CFBLOG-Plus" ,//博客描述
   "keyWords":"cloudflare,KV,workers,blog",//关键字
