@@ -184,7 +184,8 @@ async function handlerRequest(event){
   let request = event.request
   //获取url请求对象
   let url=new URL(request.url)
-  let paths=url.pathname.trim("/").split("/")
+  // 路径切分：trim("/") 在原项目里是自定义 String.trim 扩展，但更推荐直接 split/filter
+  let paths=url.pathname.split("/").filter(Boolean)
 
   //校验权限
   if(("admin"==paths[0]||true===OPT.privateBlog) &&!parseBasicAuth(request)){
@@ -197,18 +198,29 @@ async function handlerRequest(event){
     });
   }
 
-  //组装请求url，查看是否有缓存
-  const D=caches.default,
-      M="https://"+OPT.siteDomain+url.pathname,
-      x=new Request(M, request);
-  console.log("cacheFullPath:",M);
-  let k=await D.match(x);
-  if(k){
-    console.log("hit cache!")
-    return k;
+  //组装请求url，查看是否有缓存（仅缓存前台 GET 请求；私密博客不建议使用共享边缘缓存）
+  const head = paths[0] || "";
+  const cache = caches.default;
+
+  // 缓存 key：只允许白名单 query，避免 theme/pageSize 预览污染或被随机 query 打爆缓存
+  const sp = url.searchParams;
+  const allow = new URLSearchParams();
+  if (sp.has("theme")) allow.set("theme", sp.get("theme"));
+  if (sp.has("pageSize")) allow.set("pageSize", sp.get("pageSize"));
+  const cacheUrl = "https://" + OPT.siteDomain + url.pathname + (allow.toString() ? ("?" + allow.toString()) : "");
+  const cacheKey = new Request(cacheUrl, { method: "GET" });
+
+  let k;
+  if (!OPT.privateBlog && request.method === "GET" && head !== "admin") {
+    console.log("cacheKey:", cacheUrl);
+    k = await cache.match(cacheKey);
+    if (k) {
+      console.log("hit cache!");
+      return k;
+    }
   }
 
-  switch(paths[0]){
+  switch(head){
     case "favicon.ico": //图标
       k = await handle_favicon(request);
       break;
@@ -239,17 +251,20 @@ async function handlerRequest(event){
         headers:{
           "content-type":"text/html;charset=UTF-8"
         },
-        status:200
+        status:404
       })
       break;
   }  
   //设置浏览器缓存时间:后台不缓存、只缓存前台
   try{
-    if("admin"==paths[0]){
+    if(head === "admin"){
       k.headers.set("Cache-Control","no-store")
     }else{
-      k.headers.set("Cache-Control","public, max-age="+OPT.cacheTime),
-      event.waitUntil(D.put(M,k.clone()))
+      // 私密博客建议不使用 public 缓存
+      k.headers.set("Cache-Control", (OPT.privateBlog ? "private" : "public") + ", max-age=" + OPT.cacheTime)
+      if (!OPT.privateBlog && request.method === "GET") {
+        event.waitUntil(cache.put(cacheKey, k.clone()))
+      }
     }
   }catch(e){}
   
@@ -420,27 +435,32 @@ async function renderBlog(url){
    *  域名/tags/xxx/page/xxx  分类页+翻页
    * 
    */
-  let paths = url.pathname.trim("/").split("/")
-  let articles=[],
-      pageNo=1
+  const paths = url.pathname.split("/").filter(Boolean)
+  let articles = [],
+      pageNo = 1
+
   //获取文章列表
-  switch(paths[0]||"page"){
-  case "page":
-    articles = articles_all
-    pageNo = paths[1]||1
-    break;
-  case "tags":
-  case "category":
-    let category_tag = paths.slice(1).join("");//如果无分页，tags、category后面都是标签、分类名
-    if(paths.length>3 && paths.includes("page")){
-      pageNo = paths[paths.indexOf("page")+1] //分页的页码
-      category_tag = paths.slice(1, paths.lastIndexOf("page")-1).join("") //tags、category后，分页前的为标签、分类名
+  switch (paths[0] || "page") {
+    case "page":
+      articles = articles_all
+      pageNo = paths[1] || 1
+      break;
+    case "tags":
+    case "category": {
+      const pageIndex = paths.indexOf("page")
+      let category_tag = ""
+      if (pageIndex !== -1) {
+        pageNo = paths[pageIndex + 1] || 1
+        category_tag = paths.slice(1, pageIndex).join("/")
+      } else {
+        category_tag = paths.slice(1).join("/")
+      }
+      category_tag = decodeURIComponent(category_tag)
+      articles = articles_all.filter(a => (a && a[paths[0]] && a[paths[0]].includes(category_tag)))
+      break;
     }
-    category_tag = decodeURIComponent(category_tag)
-    articles = articles_all.filter(a => a[paths[0]].includes(category_tag))
-    break;
   }
-  pageNo = parseInt(pageNo)
+  pageNo = parseInt(pageNo, 10)
   // console.log(pageNo)
   // console.log(articles)
 
@@ -983,13 +1003,9 @@ function parseBasicAuth(request){
 
 //获取所有【公开】文章：仅前台使用
 async function getArticlesList(){
-  let articles_all = await getAllArticlesList();
-  
-  for(var i=0;i<articles_all.length;i++)
-    if(articles_all[i].hidden){
-        articles_all.splice(i,1);
-    }
-  return articles_all;
+  const articles_all = await getAllArticlesList();
+  // 注意：不要在正向遍历时 splice，会跳过元素
+  return (articles_all || []).filter(a => !(a && a.hidden));
 }
 
 //文章排序：先按id倒排，再按置顶时间倒排
