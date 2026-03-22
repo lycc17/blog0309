@@ -34,6 +34,61 @@ const OPT = { //网站配置
   "html404" : `<b>404</b>`,//404页面代码
   "codeBeforHead":`
   <script src="https://cdn.staticfile.org/jquery/2.2.4/jquery.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+  /* ===== Cyber Dark UI Pack (injected via OPT.codeBeforHead) ===== */
+  :root{
+    --bg0:#070A12;
+    --bg1:#0B1020;
+    --card:#0E1630;
+    --line:rgba(120,180,255,.14);
+    --text:#D7E1FF;
+    --muted:#96A6D6;
+    --brand:#7C4DFF;
+    --brand2:#00E5FF;
+    --good:#29F5A6;
+    --warn:#FFB020;
+    --shadow:0 16px 40px rgba(0,0,0,.45);
+  }
+  html,body{background:radial-gradient(1200px 900px at 20% 10%, rgba(124,77,255,.18), transparent 50%),
+                     radial-gradient(1000px 800px at 80% 30%, rgba(0,229,255,.12), transparent 55%),
+                     linear-gradient(180deg,var(--bg0),var(--bg1));
+            color:var(--text);
+            font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+            -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  }
+  a{color:var(--brand2);} a:hover{color:var(--good);} 
+  .container,.wrapper,.site{max-width:1100px;}
+  /* cards */
+  .post, .article, .widget, .card, .entry, .content-wrap, .content, .main, .sidebar .widget{
+    background:rgba(14,22,48,.65);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    backdrop-filter: blur(10px);
+  }
+  /* typography */
+  .entry-content, .post-content, .article-content{font-size:16px; line-height:1.8; color:var(--text);} 
+  h1,h2,h3{letter-spacing:.2px;}
+  h1{font-size:32px;} h2{font-size:24px;} h3{font-size:18px; color:var(--text);} 
+  p{color:var(--text);} 
+  .meta, .entry-meta, .post-meta, .muted{color:var(--muted);} 
+  /* code */
+  pre, code{font-family:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+  pre{background:rgba(0,0,0,.35); border:1px solid rgba(0,229,255,.14); border-radius:12px; padding:14px; overflow:auto;}
+  code{background:rgba(0,0,0,.28); border:1px solid rgba(124,77,255,.22); border-radius:8px; padding:2px 6px;}
+  blockquote{border-left:3px solid var(--brand2); background:rgba(0,229,255,.06); margin:18px 0; padding:10px 14px; border-radius:12px; color:var(--text);} 
+  hr{border:none; border-top:1px solid var(--line); opacity:.9; margin:26px 0;}
+  /* images */
+  img{max-width:100%; height:auto; border-radius:14px;}
+  /* video embed */
+  .oc-video{position:relative; padding-top:56.25%; border-radius:14px; overflow:hidden; border:1px solid var(--line); background:rgba(0,0,0,.35); box-shadow:var(--shadow);}
+  .oc-video iframe{position:absolute; inset:0; width:100%; height:100%;}
+  /* buttons */
+  .btn, button, input[type=submit]{border-radius:12px;}
+  </style>
   `,//其他代码,显示在</head>前
   "codeBeforBody":`
   `,//其他代码,显示在</body>前
@@ -1010,13 +1065,6 @@ async function handle_admin_api(request, paths){
   // paths: ["admin","api", ...]
   const action = paths[2] || "";
 
-  if(action !== "publish"){
-    return new Response(JSON.stringify({rst:false,msg:"unknown api"}),{
-      headers:{"content-type":"application/json;charset=UTF-8"},
-      status:404
-    })
-  }
-
   if(request.method !== "POST"){
     return new Response(JSON.stringify({rst:false,msg:"Method Not Allowed"}),{
       headers:{"content-type":"application/json;charset=UTF-8"},
@@ -1032,11 +1080,6 @@ async function handle_admin_api(request, paths){
   }
 
   // 期待 JSON body
-  // {
-  //   title, contentMD, contentHtml,
-  //   img?, link?, createDate?, category:[], tags:[],
-  //   hidden?:0|1, top_timestamp?:0, priority?, changefreq?
-  // }
   let payload;
   try{
     payload = await request.json();
@@ -1047,18 +1090,57 @@ async function handle_admin_api(request, paths){
     })
   }
 
+  if(action === "publish"){
+    return await api_publish(payload);
+  }
+  if(action === "update"){
+    return await api_update(payload);
+  }
+  if(action === "delete"){
+    return await api_delete(payload);
+  }
+
+  return new Response(JSON.stringify({rst:false,msg:"unknown api"}),{
+    headers:{"content-type":"application/json;charset=UTF-8"},
+    status:404
+  })
+}
+
+// --- API impl: publish / update / delete ---
+
+function normArr(v){
+  return Array.isArray(v) ? v : (v ? [v] : []);
+}
+
+function nowBJStr(){
+  const nowBJ = new Date(Date.now()+8*60*60*1000);
+  return nowBJ.toISOString().slice(0,16).replace('T',' ');
+}
+
+async function rebuildTagsFromIndex(articles_all){
+  let allTags=[];
+  for(let i=0;i<(articles_all||[]).length;i++){
+    const a = articles_all[i];
+    if(Array.isArray(a && a.tags)){
+      for(let j=0;j<a.tags.length;j++){
+        const t = a.tags[j];
+        if(t && t.length>0 && allTags.indexOf(t)===-1) allTags.push(t);
+      }
+    }
+  }
+  await saveWidgetTags(JSON.stringify(allTags));
+}
+
+async function api_publish(payload){
   const title = (payload.title || "").trim();
   const contentMD = (payload.contentMD || "").trim();
   const contentHtml = (payload.contentHtml || "").trim();
   const img = (payload.img || "").trim();
   const link = (payload.link || "").trim();
-  const category = Array.isArray(payload.category) ? payload.category : (payload.category ? [payload.category] : []);
-  const tags = Array.isArray(payload.tags) ? payload.tags : (payload.tags ? [payload.tags] : []);
+  const category = normArr(payload.category);
+  const tags = normArr(payload.tags);
 
-  // 默认：用北京时间（与现有后台逻辑一致：+8h）
-  const nowBJ = new Date(Date.now()+8*60*60*1000);
-  const createDate = (payload.createDate || nowBJ.toISOString().slice(0,16).replace('T',' '));
-
+  const createDate = (payload.createDate || nowBJStr());
   const hidden = (payload.hidden === 1 || payload.hidden === "1") ? 1 : 0;
   const top_timestamp = (payload.top_timestamp ? (payload.top_timestamp*1) : 0);
   const priority = (payload.priority !== undefined ? String(payload.priority) : "0.5");
@@ -1072,73 +1154,119 @@ async function handle_admin_api(request, paths){
     })
   }
 
-  // 生成新 id
   const id = await generateId();
   const contentText = contentHtml.replace(/<\/?[^>]*>/g,"").trim().substring(0,OPT.readMoreLength);
 
-  const article = {
-    id,
-    title,
-    img,
-    link,
-    createDate,
-    category,
-    tags,
-    contentMD,
-    contentHtml,
-    contentText,
-    priority,
-    top_timestamp,
-    modify_timestamp,
-    hidden,
-    changefreq
-  };
-
-  // 写入 KV
+  const article = { id,title,img,link,createDate,category,tags,contentMD,contentHtml,contentText,priority,top_timestamp,modify_timestamp,hidden,changefreq };
   await saveArticle(id, JSON.stringify(article));
 
-  // 写入文章索引（不含 html/md）
-  const articleWithoutHtml = {
-    id,
-    title,
-    img,
-    link,
-    createDate,
-    category,
-    tags,
-    contentText,
-    priority,
-    top_timestamp,
-    modify_timestamp,
-    hidden,
-    changefreq
-  };
-
-  const articles_all_old = await getAllArticlesList();
-  let articles_all = [];
-  articles_all.push(articleWithoutHtml);
-  articles_all = articles_all.concat(articles_all_old || []);
+  const articleWithoutHtml = { id,title,img,link,createDate,category,tags,contentText,priority,top_timestamp,modify_timestamp,hidden,changefreq };
+  const old = await getAllArticlesList();
+  let articles_all = [articleWithoutHtml].concat(old || []);
   articles_all = sortArticle(articles_all);
   await saveArticlesList(JSON.stringify(articles_all));
 
-  // 自动刷新 tags 并 purge
-  let allTags=[];
-  for(let i=0;i<articles_all.length;i++){
-    if(Array.isArray(articles_all[i].tags)){
-      for(let j=0;j<articles_all[i].tags.length;j++){
-        const t = articles_all[i].tags[j];
-        if(t && t.length>0 && allTags.indexOf(t)===-1) allTags.push(t);
-      }
-    }
-  }
-  await saveWidgetTags(JSON.stringify(allTags));
-
+  await rebuildTagsFromIndex(articles_all);
   const purged = await purge();
 
   return new Response(JSON.stringify({rst:true,msg:"published",id, purged}),{
     headers:{"content-type":"application/json;charset=UTF-8"},
     status:200
   })
+}
+
+async function api_update(payload){
+  const id = (payload.id || "").trim();
+  if(!/^\d{6}$/.test(id)){
+    return new Response(JSON.stringify({rst:false,msg:"invalid id"}),{headers:{"content-type":"application/json;charset=UTF-8"},status:400});
+  }
+
+  const oldRaw = await getArticle(id);
+  if(!oldRaw){
+    return new Response(JSON.stringify({rst:false,msg:"not found"}),{headers:{"content-type":"application/json;charset=UTF-8"},status:404});
+  }
+
+  let old;
+  try{ old = (typeof oldRaw === 'string') ? JSON.parse(oldRaw) : oldRaw; }catch(e){ old = oldRaw; }
+
+  // allow partial updates; if contentHtml changes -> refresh contentText
+  const next = Object.assign({}, old);
+
+  const set = (k, v) => { if(v !== undefined && v !== null) next[k] = v; };
+
+  if(payload.title !== undefined) set('title', String(payload.title).trim());
+  if(payload.img !== undefined) set('img', String(payload.img).trim());
+  if(payload.link !== undefined) set('link', String(payload.link).trim());
+  if(payload.createDate !== undefined) set('createDate', String(payload.createDate).trim());
+  if(payload.category !== undefined) set('category', normArr(payload.category));
+  if(payload.tags !== undefined) set('tags', normArr(payload.tags));
+  if(payload.contentMD !== undefined) set('contentMD', String(payload.contentMD));
+  if(payload.contentHtml !== undefined) set('contentHtml', String(payload.contentHtml));
+  if(payload.hidden !== undefined) set('hidden', (payload.hidden === 1 || payload.hidden === "1") ? 1 : 0);
+  if(payload.top_timestamp !== undefined) set('top_timestamp', payload.top_timestamp ? (payload.top_timestamp*1) : 0);
+  if(payload.priority !== undefined) set('priority', String(payload.priority));
+  if(payload.changefreq !== undefined) set('changefreq', String(payload.changefreq));
+
+  // always bump modify_timestamp
+  next.modify_timestamp = new Date().getTime()+8*60*60*1000;
+
+  if(next.contentHtml){
+    next.contentText = String(next.contentHtml).replace(/<\/?[^>]*>/g,"").trim().substring(0,OPT.readMoreLength);
+  }
+
+  // basic required fields sanity
+  if(!next.title || !next.createDate || !next.category || next.category.length===0 || !next.contentMD || !next.contentHtml){
+    return new Response(JSON.stringify({rst:false,msg:"missing fields after update"}),{headers:{"content-type":"application/json;charset=UTF-8"},status:400});
+  }
+
+  await saveArticle(id, JSON.stringify(next));
+
+  // update index entry
+  const articleWithoutHtml = {
+    id: next.id,
+    title: next.title,
+    img: next.img,
+    link: next.link,
+    createDate: next.createDate,
+    category: next.category,
+    tags: next.tags,
+    contentText: next.contentText,
+    priority: next.priority,
+    top_timestamp: next.top_timestamp,
+    modify_timestamp: next.modify_timestamp,
+    hidden: next.hidden,
+    changefreq: next.changefreq
+  };
+
+  let articles_all = await getAllArticlesList();
+  articles_all = (articles_all || []).filter(a => !(a && a.id === id));
+  articles_all.push(articleWithoutHtml);
+  articles_all = sortArticle(articles_all);
+  await saveArticlesList(JSON.stringify(articles_all));
+
+  await rebuildTagsFromIndex(articles_all);
+  const purged = await purge();
+
+  return new Response(JSON.stringify({rst:true,msg:"updated",id, purged}),{headers:{"content-type":"application/json;charset=UTF-8"},status:200});
+}
+
+async function api_delete(payload){
+  const id = (payload.id || "").trim();
+  if(!/^\d{6}$/.test(id)){
+    return new Response(JSON.stringify({rst:false,msg:"invalid id"}),{headers:{"content-type":"application/json;charset=UTF-8"},status:400});
+  }
+
+  // delete KV
+  await CFBLOG.delete(id);
+
+  let articles_all = await getAllArticlesList();
+  articles_all = (articles_all || []).filter(a => !(a && a.id === id));
+  await saveArticlesList(JSON.stringify(articles_all));
+
+  await rebuildTagsFromIndex(articles_all);
+  const purged = await purge();
+
+  return new Response(JSON.stringify({rst:true,msg:"deleted",id, purged}),{headers:{"content-type":"application/json;charset=UTF-8"},status:200});
 }
 
 
