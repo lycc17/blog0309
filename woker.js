@@ -20,6 +20,7 @@ const OPT = { //网站配置
   "siteDescription":"CFBLOG-Plus" ,//博客描述
   "keyWords":"cloudflare,KV,workers,blog",//关键字
   "logo":"https://cdn.jsdelivr.net/gh/Arronlong/cfblog-plus@master/themes/JustNews/files/logo2.png",//JustNews主题的logo
+  "defaultCover":"https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/covers/cover-01.svg",// 默认封面（当文章 img 为空时兜底）
 
   "theme_github_path":"https://cdn.jsdelivr.net/gh/Arronlong/cfblog-plus@master/themes/",//主题路径
   "themeURL" : "https://raw.githubusercontent.com/Arronlong/cfblog-plus/master/themes/JustNews/", // 模板地址,以 "/"" 结尾
@@ -1135,7 +1136,8 @@ async function api_publish(payload){
   const title = (payload.title || "").trim();
   const contentMD = (payload.contentMD || "").trim();
   const contentHtml = (payload.contentHtml || "").trim();
-  const img = (payload.img || "").trim();
+  // img 可选；为空则用默认封面兜底，避免列表/侧栏破图
+  const img = ((payload.img || "").trim()) || (OPT.defaultCover || "");
   const link = (payload.link || "").trim();
   const category = normArr(payload.category);
   const tags = normArr(payload.tags);
@@ -1195,7 +1197,7 @@ async function api_update(payload){
   const set = (k, v) => { if(v !== undefined && v !== null) next[k] = v; };
 
   if(payload.title !== undefined) set('title', String(payload.title).trim());
-  if(payload.img !== undefined) set('img', String(payload.img).trim());
+  if(payload.img !== undefined) set('img', String(payload.img).trim() || (OPT.defaultCover || ""));
   if(payload.link !== undefined) set('link', String(payload.link).trim());
   if(payload.createDate !== undefined) set('createDate', String(payload.createDate).trim());
   if(payload.category !== undefined) set('category', normArr(payload.category));
