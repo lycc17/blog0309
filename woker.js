@@ -1,5 +1,6 @@
 /**
  * 更新记录（自动维护，北京时间 UTC+8）
+ * - 2026-03-22 23:19: 新增 cacheKeyVersion（缓存Key版本）并写入 Workers Cache Key，避免部署后仍命中旧边缘缓存。
  * - 2026-03-22 22:59: 修复侧栏「近期文章」样式覆盖优先级（JustNews 的 widget_post_thumb），使用 !important 强制覆盖主题 float/margin。
  * - 2026-03-22 22:55: 移除重复注入的旧版 jQuery，避免破坏主题 JS（懒加载/侧栏固定）。
  * - 2026-03-22 22:40: 注入深色赛博 UI；新增发布 Token 管理接口（/admin/api/update、/admin/api/delete）；增加默认封面 defaultCover + img 兜底。
@@ -39,6 +40,7 @@ const OPT = { //网站配置
   "recentlyType" : 1,//最近文章类型：1-按创建时间倒序（按id倒序），2-按修改时间排序
   "readMoreLength":150,//阅读更多截取长度
   "cacheTime" : 60*60*24*2, //文章在浏览器的缓存时长(秒),建议=文章更新频率
+  "cacheKeyVersion": "2026-03-22-01", // 缓存Key版本：每次部署/UI调整后建议递增，用于让 Workers Cache API 失效旧缓存
   "html404" : `<b>404</b>`,//404页面代码
   "codeBeforHead":`
   <!-- NOTE: JustNews theme already loads jQuery. Do NOT load a second (older) jQuery here; it breaks theme JS (lazyload/fixed sidebar). -->
@@ -296,6 +298,9 @@ async function handlerRequest(event){
   const allow = new URLSearchParams();
   if (sp.has("theme")) allow.set("theme", sp.get("theme"));
   if (sp.has("pageSize")) allow.set("pageSize", sp.get("pageSize"));
+  // include cacheKeyVersion to bust edge cache after deployments
+  const v = (OPT.cacheKeyVersion ? String(OPT.cacheKeyVersion) : "");
+  if(v) allow.set("v", v);
   const cacheUrl = "https://" + OPT.siteDomain + url.pathname + (allow.toString() ? ("?" + allow.toString()) : "");
   const cacheKey = new Request(cacheUrl, { method: "GET" });
 
