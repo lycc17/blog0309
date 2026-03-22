@@ -15,7 +15,7 @@ const ACCOUNT = { //账号相关，安全性更高
 const OPT = { //网站配置
 
   /*--前台参数--*/
-  "siteDomain" : "blog.2013.xyz",// 域名(不带https 也不带/)
+  "siteDomain" : "blog.201310.xyz",// 域名(不带https 也不带/)
   "siteName" : "CFBLOG-Plus",//博客名称
   "siteDescription":"CFBLOG-Plus" ,//博客描述
   "keyWords":"cloudflare,KV,workers,blog",//关键字
