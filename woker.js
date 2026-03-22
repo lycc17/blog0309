@@ -1,5 +1,6 @@
 /**
  * 更新记录（自动维护，北京时间 UTC+8）
+ * - 2026-03-22 23:30: 修复侧栏与文章列表未对齐（两列布局被卡片边框撑宽导致 sidebar 掉落）：全局 box-sizing=border-box；卡片样式不再作用于 .main/.sidebar 容器，仅作用于 sec-panel/文章项/侧栏 widget。
  * - 2026-03-22 23:19: 新增 cacheKeyVersion（缓存Key版本）并写入 Workers Cache Key，避免部署后仍命中旧边缘缓存。
  * - 2026-03-22 22:59: 修复侧栏「近期文章」样式覆盖优先级（JustNews 的 widget_post_thumb），使用 !important 强制覆盖主题 float/margin。
  * - 2026-03-22 22:55: 移除重复注入的旧版 jQuery，避免破坏主题 JS（懒加载/侧栏固定）。
@@ -62,6 +63,7 @@ const OPT = { //网站配置
     --warn:#FFB020;
     --shadow:0 16px 40px rgba(0,0,0,.45);
   }
+  *,*::before,*::after{box-sizing:border-box;}
   html,body{background:radial-gradient(1200px 900px at 20% 10%, rgba(124,77,255,.18), transparent 50%),
                      radial-gradient(1000px 800px at 80% 30%, rgba(0,229,255,.12), transparent 55%),
                      linear-gradient(180deg,var(--bg0),var(--bg1));
@@ -72,8 +74,8 @@ const OPT = { //网站配置
   a{color:var(--brand2);} a:hover{color:var(--good);} 
   .container{max-width:1100px;}
 
-  /* cards */
-  .post, .article, .widget, .card, .entry, .content-wrap, .content, .main, .sidebar .widget{
+  /* cards (layout-safe): avoid styling .main/.sidebar containers to prevent sidebar dropping */
+  .sec-panel, .post-loop .item, article .entry, .sidebar .widget{
     background:rgba(14,22,48,.65);
     border:1px solid var(--line);
     border-radius:14px;
