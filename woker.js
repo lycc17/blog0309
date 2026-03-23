@@ -1,5 +1,6 @@
 /**
  * 更新记录（自动维护，北京时间 UTC+8）
+ * - 2026-03-23 08:32: 发布/更新/删除后自动清理 Workers Cache API（caches.default）首页缓存，避免更新封面后首页不刷新。
  * - 2026-03-22 23:30: 修复侧栏与文章列表未对齐（两列布局被卡片边框撑宽导致 sidebar 掉落）：全局 box-sizing=border-box；卡片样式不再作用于 .main/.sidebar 容器，仅作用于 sec-panel/文章项/侧栏 widget。
  * - 2026-03-22 23:19: 新增 cacheKeyVersion（缓存Key版本）并写入 Workers Cache Key，避免部署后仍命中旧边缘缓存。
  * - 2026-03-22 22:59: 修复侧栏「近期文章」样式覆盖优先级（JustNews 的 widget_post_thumb），使用 !important 强制覆盖主题 float/margin。
@@ -1205,8 +1206,9 @@ async function api_publish(payload){
 
   await rebuildTagsFromIndex(articles_all);
   const purged = await purge();
+  const workersCachePurged = await purgeWorkersCache();
 
-  return new Response(JSON.stringify({rst:true,msg:"published",id, purged}),{
+  return new Response(JSON.stringify({rst:true,msg:"published",id, purged, workersCachePurged}),{
     headers:{"content-type":"application/json;charset=UTF-8"},
     status:200
   })
@@ -1283,8 +1285,9 @@ async function api_update(payload){
 
   await rebuildTagsFromIndex(articles_all);
   const purged = await purge();
+  const workersCachePurged = await purgeWorkersCache();
 
-  return new Response(JSON.stringify({rst:true,msg:"updated",id, purged}),{headers:{"content-type":"application/json;charset=UTF-8"},status:200});
+  return new Response(JSON.stringify({rst:true,msg:"updated",id, purged, workersCachePurged}),{headers:{"content-type":"application/json;charset=UTF-8"},status:200});
 }
 
 async function api_delete(payload){
@@ -1302,8 +1305,9 @@ async function api_delete(payload){
 
   await rebuildTagsFromIndex(articles_all);
   const purged = await purge();
+  const workersCachePurged = await purgeWorkersCache();
 
-  return new Response(JSON.stringify({rst:true,msg:"deleted",id, purged}),{headers:{"content-type":"application/json;charset=UTF-8"},status:200});
+  return new Response(JSON.stringify({rst:true,msg:"deleted",id, purged, workersCachePurged}),{headers:{"content-type":"application/json;charset=UTF-8"},status:200});
 }
 
 
@@ -1430,6 +1434,24 @@ async function purge(cacheZoneId=ACCOUNT.cacheZoneId,cacheToken=ACCOUNT.cacheTok
         body:'{"purge_everything":true}'
     });
     return (await ret.json()).success
+}
+
+// 清理 Workers Cache API（caches.default）里的页面缓存。
+// 注意：这与 Cloudflare Zone purge 是两套缓存。
+async function purgeWorkersCache(){
+  try{
+    const cache = caches.default;
+    const v = (OPT.cacheKeyVersion ? String(OPT.cacheKeyVersion) : "");
+    // 这些 URL 需要与 handlerRequest 里生成 cacheKey 的方式一致（含 v）。
+    const urls = [
+      `https://${OPT.siteDomain}/?v=${encodeURIComponent(v)}`,
+      `https://${OPT.siteDomain}/page/1?v=${encodeURIComponent(v)}`,
+    ];
+    await Promise.all(urls.map(u => cache.delete(new Request(u, {method:"GET"}))));
+    return true;
+  }catch(e){
+    return false;
+  }
 }
 
 //后台文章列表页的分页加载，返回[文章列表,是否无下一页]
