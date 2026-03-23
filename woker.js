@@ -42,7 +42,7 @@ const OPT = { //网站配置
   "recentlyType" : 1,//最近文章类型：1-按创建时间倒序（按id倒序），2-按修改时间排序
   "readMoreLength":150,//阅读更多截取长度
   "cacheTime" : 60*60*24*2, //文章在浏览器的缓存时长(秒),建议=文章更新频率
-  "cacheKeyVersion": "2026-03-22-01", // 缓存Key版本：每次部署/UI调整后建议递增，用于让 Workers Cache API 失效旧缓存
+  "cacheKeyVersion": "2026-03-23-01", // 缓存Key版本：每次部署/UI调整后建议递增，用于让 Workers Cache API 失效旧缓存
   "html404" : `<b>404</b>`,//404页面代码
   "codeBeforHead":`
   <!-- NOTE: JustNews theme already loads jQuery. Do NOT load a second (older) jQuery here; it breaks theme JS (lazyload/fixed sidebar). -->
@@ -73,7 +73,7 @@ const OPT = { //网站配置
             -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
   }
   a{color:var(--brand2);} a:hover{color:var(--good);} 
-  .container{max-width:1100px;}
+  /* container: follow JustNews theme default width (do not override) */
 
   /* cards (layout-safe): avoid styling .main/.sidebar containers to prevent sidebar dropping */
   .sec-panel, .post-loop .item, article .entry, .sidebar .widget{
