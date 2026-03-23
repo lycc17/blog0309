@@ -1,5 +1,6 @@
 /**
  * 更新记录（自动维护，北京时间 UTC+8）
+ * - 2026-03-23 09:29: 新增「全局缓存版本号」（KV: SYSTEM_CACHE_BUSTER）：更新/发布/删除后 bump，并加入 cacheKey（cb=...），解决 caches.default 分布式导致的首页不刷新问题。
  * - 2026-03-23 08:32: 发布/更新/删除后自动清理 Workers Cache API（caches.default）首页缓存，避免更新封面后首页不刷新。
  * - 2026-03-22 23:30: 修复侧栏与文章列表未对齐（两列布局被卡片边框撑宽导致 sidebar 掉落）：全局 box-sizing=border-box；卡片样式不再作用于 .main/.sidebar 容器，仅作用于 sec-panel/文章项/侧栏 widget。
  * - 2026-03-22 23:19: 新增 cacheKeyVersion（缓存Key版本）并写入 Workers Cache Key，避免部署后仍命中旧边缘缓存。
@@ -11,6 +12,40 @@
 /**------【①.谋而后定：配置区】-----**/
 
 'use strict';
+
+// =============================
+// 全局缓存版本号（KV）
+// - 解决问题：Workers Cache API（caches.default）是按边缘节点分布的，单点 delete 不保证全网立即刷新
+// - 方案：在 KV 写入全局 cache buster，并将其加入 cacheKey，使所有边缘节点自然 miss 生成新首页
+// =============================
+const CACHE_BUSTER_KEY = "SYSTEM_CACHE_BUSTER";
+let __cacheBuster = "";
+let __cacheBusterAt = 0;
+async function getCacheBuster(){
+  const now = Date.now();
+  // 本地缓存 30 秒，避免每次请求都打 KV
+  if(__cacheBuster && (now - __cacheBusterAt) < 30000) return __cacheBuster;
+  try{
+    const v = await CFBLOG.get(CACHE_BUSTER_KEY);
+    __cacheBuster = v || "";
+  }catch(e){
+    __cacheBuster = "";
+  }
+  __cacheBusterAt = now;
+  return __cacheBuster;
+}
+async function bumpCacheBuster(){
+  try{
+    const v = String(Date.now());
+    await CFBLOG.put(CACHE_BUSTER_KEY, v);
+    __cacheBuster = v;
+    __cacheBusterAt = Date.now();
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
 const ACCOUNT = { //账号相关，安全性更高
 
   "user" : "admin", //博客后台用户名
@@ -304,6 +339,11 @@ async function handlerRequest(event){
   // include cacheKeyVersion to bust edge cache after deployments
   const v = (OPT.cacheKeyVersion ? String(OPT.cacheKeyVersion) : "");
   if(v) allow.set("v", v);
+
+  // include global KV cache buster so homepage/list pages refresh across all edge locations
+  const cb = await getCacheBuster();
+  if(cb) allow.set("cb", cb);
+
   const cacheUrl = "https://" + OPT.siteDomain + url.pathname + (allow.toString() ? ("?" + allow.toString()) : "");
   const cacheKey = new Request(cacheUrl, { method: "GET" });
 
@@ -1207,8 +1247,9 @@ async function api_publish(payload){
   await rebuildTagsFromIndex(articles_all);
   const purged = await purge();
   const workersCachePurged = await purgeWorkersCache();
+  const cacheBusterBumped = await bumpCacheBuster();
 
-  return new Response(JSON.stringify({rst:true,msg:"published",id, purged, workersCachePurged}),{
+  return new Response(JSON.stringify({rst:true,msg:"published",id, purged, workersCachePurged, cacheBusterBumped}),{
     headers:{"content-type":"application/json;charset=UTF-8"},
     status:200
   })
@@ -1286,8 +1327,9 @@ async function api_update(payload){
   await rebuildTagsFromIndex(articles_all);
   const purged = await purge();
   const workersCachePurged = await purgeWorkersCache();
+  const cacheBusterBumped = await bumpCacheBuster();
 
-  return new Response(JSON.stringify({rst:true,msg:"updated",id, purged, workersCachePurged}),{headers:{"content-type":"application/json;charset=UTF-8"},status:200});
+  return new Response(JSON.stringify({rst:true,msg:"updated",id, purged, workersCachePurged, cacheBusterBumped}),{headers:{"content-type":"application/json;charset=UTF-8"},status:200});
 }
 
 async function api_delete(payload){
@@ -1306,8 +1348,9 @@ async function api_delete(payload){
   await rebuildTagsFromIndex(articles_all);
   const purged = await purge();
   const workersCachePurged = await purgeWorkersCache();
+  const cacheBusterBumped = await bumpCacheBuster();
 
-  return new Response(JSON.stringify({rst:true,msg:"deleted",id, purged, workersCachePurged}),{headers:{"content-type":"application/json;charset=UTF-8"},status:200});
+  return new Response(JSON.stringify({rst:true,msg:"deleted",id, purged, workersCachePurged, cacheBusterBumped}),{headers:{"content-type":"application/json;charset=UTF-8"},status:200});
 }
 
 
