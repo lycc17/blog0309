@@ -22,6 +22,16 @@
 
 // Ensure Mustache identifier is available in module scope (Wrangler deploys as modules by default)
 // In module workers, global properties (globalThis.Mustache) are NOT injected as free variables.
+// Also handle cases where bundlers/CJS shims make the UMD branch pick module.exports instead of global.
+if(!globalThis.Mustache){
+  try{
+    if(typeof module !== 'undefined' && module && module.exports){
+      globalThis.Mustache = module.exports;
+    }else if(typeof exports !== 'undefined' && exports){
+      globalThis.Mustache = exports;
+    }
+  }catch(e){}
+}
 var Mustache = globalThis.Mustache;
 
 // =============================
@@ -654,8 +664,12 @@ async function renderBlog(url){
   
   //使用mustache.js进行页面渲染（参数替换）
   cfg.OPT=OPT
-  
-  let html = globalThis.Mustache.render(theme_html,cfg)
+
+  const M = globalThis.Mustache;
+  if(!M || typeof M.render !== 'function'){
+    throw new Error('Mustache runtime missing: globalThis.Mustache.render is not available');
+  }
+  let html = M.render(theme_html,cfg)
   
   return new Response(html,{
     headers:{
@@ -702,8 +716,12 @@ async function handle_article(id){
   
   //使用mustache.js渲染页面（参数替换）
   cfg.OPT=OPT
-  
-  let html = globalThis.Mustache.render(theme_html,cfg)
+
+  const M = globalThis.Mustache;
+  if(!M || typeof M.render !== 'function'){
+    throw new Error('Mustache runtime missing: globalThis.Mustache.render is not available');
+  }
+  let html = M.render(theme_html,cfg)
 
   //以html格式返回
   return new Response(html,{
