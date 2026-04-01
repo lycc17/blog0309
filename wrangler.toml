@@ -5,3 +5,7 @@ compatibility_date = "2026-04-01"
 routes = [
   { pattern = "blog.201310.xyz", zone_name = "201310.xyz", custom_domain = true }
 ]
+
+[[kv_namespaces]]
+binding = "CFBLOG"
+id = "6a8a6feb73dd4a9691c63f2b91d57890"
