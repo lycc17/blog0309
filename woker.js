@@ -984,6 +984,10 @@ async function handle_admin(request){
       articles_all=articles_all.concat(articles_all_old),
       articles_all=sortArticle(articles_all),
       await saveArticlesList(JSON.stringify(articles_all))
+
+      // After create, auto-refresh homepage/list caches so summaries stay in sync
+      try{ await bumpCacheBuster(); }catch(e){}
+      try{ await purgeWorkersCache(); }catch(e){}
       
       json = '{"msg":"added OK","rst":true,"id":"'+id+'"}'
     }else{
@@ -1002,6 +1006,11 @@ async function handle_admin(request){
           e.splice(r,1);
           
           await saveArticlesList(JSON.stringify(e))
+
+          // After delete, auto-refresh homepage/list caches
+          try{ await bumpCacheBuster(); }catch(e){}
+          try{ await purgeWorkersCache(); }catch(e){}
+
           json = '{"msg":"Delete ('+id+')  OK","rst":true,"id":"'+id+'"}'
           break;
         }
@@ -1088,6 +1097,11 @@ async function handle_admin(request){
       articles_all.push(articleWithoutHtml),
       articles_all=sortArticle(articles_all),
       await saveArticlesList(JSON.stringify(articles_all))
+
+      // After edit, auto-refresh homepage/list caches so summaries stay in sync
+      try{ await bumpCacheBuster(); }catch(e){}
+      try{ await purgeWorkersCache(); }catch(e){}
+
       json = '{"msg":"Edit OK","rst":true,"id":"'+id+'"}'
     }else{
       json = '{"msg":"信息不全","rst":false}'
