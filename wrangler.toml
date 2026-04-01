@@ -1,0 +1,3 @@
+name = "blog2026"          # 这里换成你 Cloudflare 里 Worker 的脚本名
+main = "woker.js"             # 入口文件名（你仓库现在是 woker.js）
+compatibility_date = "2026-04-01"
