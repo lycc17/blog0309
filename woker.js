@@ -466,14 +466,20 @@ async function handlerRequest(event){
     if(head === "admin"){
       k.headers.set("Cache-Control","no-store")
     }else{
+      // 对首页/列表页降低浏览器缓存，避免 UI 调整后用户仍看到旧 HTML（title/logo/css 注入）
+      // - 缓存仍由 Workers Cache API 兜底（cacheKeyVersion + KV cache buster）
+      // - 文章页依旧使用 OPT.cacheTime，保证性能
+      const isListPage = (head === "" || head === "page" || head === "category" || head === "tags");
+      const browserMaxAge = isListPage ? 300 : OPT.cacheTime; // list: 5min, article: default
+
       // 私密博客建议不使用 public 缓存
-      k.headers.set("Cache-Control", (OPT.privateBlog ? "private" : "public") + ", max-age=" + OPT.cacheTime)
+      k.headers.set("Cache-Control", (OPT.privateBlog ? "private" : "public") + ", max-age=" + browserMaxAge)
       if (!OPT.privateBlog && request.method === "GET") {
         event.waitUntil(cache.put(cacheKey, k.clone()))
       }
     }
   }catch(e){}
-  
+
   return k
 }
 
