@@ -82,10 +82,11 @@ const OPT = { //网站配置
 
   /*--前台参数--*/
   "siteDomain" : "blog.201310.xyz",// 域名(不带https 也不带/)
-  "siteName" : "CFBLOG-Plus",//博客名称
-  "siteDescription":"CFBLOG-Plus" ,//博客描述
+  "siteName" : "糖果的博客",//博客名称
+  "siteDescription":"糖果的博客" ,//博客描述
   "keyWords":"cloudflare,KV,workers,blog",//关键字
-  "logo":"https://cdn.jsdelivr.net/gh/Arronlong/cfblog-plus@master/themes/JustNews/files/logo2.png",//JustNews主题的logo
+  // 自定义 LOGO（建议放在你自己的仓库/CDN，避免依赖上游主题资源）
+  "logo":"https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/logo.svg",//站点logo
   "defaultCover":"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200&h=630",// 默认封面（当文章 img 为空时兜底）
 
   "theme_github_path":"https://cdn.jsdelivr.net/gh/Arronlong/cfblog-plus@master/themes/",//主题路径
@@ -104,9 +105,47 @@ const OPT = { //网站配置
   <!-- NOTE: JustNews theme already loads jQuery. Do NOT load a second (older) jQuery here; it breaks theme JS (lazyload/fixed sidebar). -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=LXGW+WenKai:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Favicon / Tab icon -->
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/favicon.ico" type="image/x-icon">
   <style>
   /* ===== Cyber Dark UI Pack (injected via OPT.codeBeforHead) ===== */
+
+  /* ---- Nav typography polish (menu + login) ---- */
+  :root{
+    /* For Chinese nav items */
+    --nav-font: "LXGW WenKai", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+    --nav-weight: 700;
+
+    --bg0:#070A12;
+    --bg1:#0B1020;
+    --card:#0E1630;
+    --line:rgba(120,180,255,.14);
+    --text:#D7E1FF;
+    --muted:#96A6D6;
+    --brand:#7C4DFF;
+    --brand2:#00E5FF;
+    --good:#29F5A6;
+    --warn:#FFB020;
+    --shadow:0 16px 40px rgba(0,0,0,.45);
+  }
+  /* Primary menu items: 技术文章 / 科普文章 */
+  .primary-menu .nav > li > a{
+    font-family: var(--nav-font) !important;
+    font-weight: var(--nav-weight) !important;
+    letter-spacing: .06em;
+    font-size: 16px;
+  }
+  /* Login button on the right: 登录 */
+  .navbar-action .login{
+    font-family: var(--nav-font) !important;
+    font-weight: var(--nav-weight) !important;
+    letter-spacing: .08em;
+    font-size: 15px;
+  }
+
+  /* theme variables */
   :root{
     --bg0:#070A12;
     --bg1:#0B1020;
@@ -1478,16 +1517,153 @@ function processArticleProp(articles){
     }
 }
 
-//获取前台模板源码, template_path:模板的相对路径
+// 获取前台/后台模板源码, template_path: 模板的相对路径
 async function getThemeHtml(template_path){
-  template_path=template_path.replace(".html","")
-  let html = await (await fetch(OPT.themeURL+template_path+".html",{cf:{cacheTtl:600}})).text();
-  
-  //对后台编辑页下手
-  if("admin/index|admin/editor".includes(template_path)){
-      html = html.replace("$('#WidgetCategory').val(JSON.stringify(categoryJson))",OPT.editor_page_scripts+"$('#WidgetCategory').val(JSON.stringify(categoryJson))")
+  template_path = template_path.replace(".html","")
+  let html = await (await fetch(OPT.themeURL + template_path + ".html", {cf:{cacheTtl:600}})).text();
+
+  // ===== Admin UI：统一注入赛博暗色 UI（后台列表/新建/设置/发布 + 编辑页） =====
+  // 目标：不改上游主题源码，只在 Worker 层做 head 注入。
+  // 注意：后台页面本身引用 Bootstrap 3 与 editor.md，这里仅做样式覆盖。
+  if (template_path.startsWith("admin/")) {
+    const adminHead = `
+      <!-- TangTang Admin Cyber UI (injected) -->
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&family=LXGW+WenKai:wght@400;700&display=swap" rel="stylesheet">
+      <style id="tt-admin-ui">
+        :root{
+          --bg0:#070A12;
+          --bg1:#0B1020;
+          --card:rgba(14,22,48,.72);
+          --line:rgba(120,180,255,.16);
+          --text:#D7E1FF;
+          --muted:#96A6D6;
+          --brand:#7C4DFF;
+          --brand2:#00E5FF;
+          --good:#29F5A6;
+          --warn:#FFB020;
+          --shadow:0 16px 40px rgba(0,0,0,.45);
+          --r:14px;
+          --nav-font:"LXGW WenKai","Noto Serif SC","Source Han Serif SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",serif;
+        }
+        html,body{
+          background:radial-gradient(1200px 900px at 20% 10%, rgba(124,77,255,.16), transparent 50%),
+                     radial-gradient(1000px 800px at 80% 30%, rgba(0,229,255,.11), transparent 55%),
+                     linear-gradient(180deg,var(--bg0),var(--bg1));
+          color:var(--text);
+          font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+          -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+        }
+        a{color:var(--brand2);} a:hover{color:var(--good);} 
+
+        /* layout */
+        .container{max-width:1200px; width:calc(100% - 48px);} 
+        .container-fluid{padding-left:24px; padding-right:24px;}
+        #myTabContent{padding-top:18px !important;}
+
+        /* top tabs */
+        .navbar{background:rgba(14,22,48,.55); border:1px solid var(--line); box-shadow:var(--shadow); backdrop-filter: blur(10px);}
+        .nav-tabs{border-bottom:1px solid var(--line);} 
+        .nav-tabs>li>a{
+          border:1px solid transparent;
+          border-radius:12px 12px 0 0;
+          color:var(--muted);
+          font-weight:800;
+          letter-spacing:.06em;
+          padding:12px 16px;
+        }
+        .nav-tabs>li>a:hover{background:rgba(0,229,255,.06); color:var(--text); border-color:rgba(0,229,255,.16);} 
+        .nav-tabs>li.active>a,
+        .nav-tabs>li.active>a:focus,
+        .nav-tabs>li.active>a:hover{
+          background:var(--card);
+          color:var(--text);
+          border:1px solid var(--line);
+          border-bottom-color:transparent;
+        }
+        /* first tab brand text */
+        #myTab > li:first-child > a{
+          font-family:var(--nav-font);
+          letter-spacing:.12em;
+        }
+
+        /* cards */
+        .tab-pane .container, .jumbotron{
+          background:var(--card);
+          border:1px solid var(--line);
+          border-radius:var(--r);
+          box-shadow:var(--shadow);
+          padding:18px 18px;
+        }
+        .jumbotron{margin-top:6px;}
+        .jumbotron .lead{color:var(--text); opacity:.92;}
+
+        /* tables */
+        .table{background:transparent;}
+        .table>thead>tr>th, .table>tbody>tr>td, .table>tbody>tr>th{border-top:1px solid rgba(120,180,255,.12);} 
+        .table-striped>tbody>tr:nth-of-type(odd){background:rgba(255,255,255,.02);} 
+        #articleList tr:first-child td{font-weight:800; color:var(--muted);} 
+
+        /* forms */
+        label{color:var(--muted); font-weight:800; letter-spacing:.04em;}
+        .form-control{
+          background:rgba(7,10,18,.55);
+          color:var(--text);
+          border:1px solid rgba(120,180,255,.16);
+          border-radius:12px;
+          box-shadow:none;
+        }
+        .form-control:focus{border-color:rgba(0,229,255,.45); box-shadow:0 0 0 3px rgba(0,229,255,.10);} 
+        input::placeholder{color:rgba(150,166,214,.70);} 
+        .bootstrap-select>.dropdown-toggle{
+          background:rgba(7,10,18,.55) !important;
+          color:var(--text) !important;
+          border:1px solid rgba(120,180,255,.16) !important;
+          border-radius:12px !important;
+        }
+
+        /* buttons */
+        .btn{border-radius:12px; font-weight:800; letter-spacing:.06em;}
+        .btn-default{background:rgba(124,77,255,.12); border-color:rgba(124,77,255,.35); color:var(--text);} 
+        .btn-default:hover{background:rgba(124,77,255,.20); border-color:rgba(0,229,255,.30); color:var(--text);} 
+        .btn-warning{background:rgba(255,176,32,.16); border-color:rgba(255,176,32,.35); color:var(--text);} 
+        .btn-warning:hover{background:rgba(255,176,32,.22);}
+
+        /* editor.md container */
+        #content, .editormd{border-radius:var(--r); overflow:hidden;}
+        .editormd{border:1px solid rgba(120,180,255,.18) !important; box-shadow:var(--shadow);} 
+        .editormd-toolbar{
+          background:rgba(14,22,48,.85) !important;
+          border-bottom:1px solid rgba(120,180,255,.14) !important;
+        }
+        .editormd-toolbar a{color:var(--text) !important; opacity:.88;}
+        .editormd-toolbar a:hover{opacity:1; color:var(--good) !important;}
+        .editormd-menu>li.divider{color:rgba(150,166,214,.55) !important;}
+        .editormd-preview-container{background:rgba(7,10,18,.35) !important;}
+        .editormd-preview-container, .editormd-preview-container *{color:var(--text) !important;}
+      </style>
+    `;
+    if (html.includes("</head>")) html = html.replace("</head>", adminHead + "\n</head>");
   }
-  
+
+  // 对后台编辑器（admin/index 的“新建”tab + admin/edit 页面）注入额外脚本（解析HTML标签等）
+  if ("admin/index|admin/edit".includes(template_path)) {
+    html = html.replace(
+      "$('#WidgetCategory').val(JSON.stringify(categoryJson))",
+      OPT.editor_page_scripts + "$('#WidgetCategory').val(JSON.stringify(categoryJson))"
+    )
+  }
+
+  // 后台品牌文案：把默认 CF-blog 字样替换为你的站点名（不影响功能）
+  if (template_path === "admin/index") {
+    html = html.replace(">CF-blog<", ">糖果的博客<");
+    html = html.replace("<title>CF-blog后台</title>", "<title>糖果的博客 - 后台</title>");
+  }
+  if (template_path === "admin/edit") {
+    html = html.replace("编辑文章 - CF-blog后台", "编辑文章 - 糖果的博客");
+  }
+
   return html
 }
 
