@@ -106,9 +106,11 @@ const OPT = { //网站配置
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=LXGW+WenKai:wght@400;700&display=swap" rel="stylesheet">
-  <!-- Favicon / Tab icon -->
+  <!-- Favicon / Tab icon (match blog logo mark) -->
   <link rel="icon" href="https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/favicon.svg" type="image/svg+xml">
+  <!-- Fallbacks for some browsers/platforms (served by handle_favicon) -->
   <link rel="alternate icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
   <style>
   /* ===== Cyber Dark UI Pack (injected via OPT.codeBeforHead) ===== */
 
@@ -135,14 +137,21 @@ const OPT = { //网站配置
     font-family: var(--nav-font) !important;
     font-weight: var(--nav-weight) !important;
     letter-spacing: .06em;
-    font-size: 16px;
+    font-size: 19px; /* +~20% */
   }
   /* Login button on the right: 登录 */
   .navbar-action .login{
     font-family: var(--nav-font) !important;
     font-weight: var(--nav-weight) !important;
     letter-spacing: .08em;
-    font-size: 15px;
+    font-size: 18px; /* +~20% */
+  }
+
+  /* Logo clarity */
+  .logo img{
+    height: 42px;
+    width: auto;
+    filter: drop-shadow(0 6px 18px rgba(0,0,0,.35));
   }
 
   /* theme variables */
@@ -472,22 +481,25 @@ async function handlerRequest(event){
 
 //访问: favicon.ico
 async function handle_favicon(request){
-  /*
-  想要自定义，或者用指定的ico，可将此请求置为404，并在codeBeforHead中自行添加类似代码：
-    <link rel="icon" type="image/x-icon" href="https://cdn.jsdelivr.net/gh/gdtool/zhaopp/cfblog/favicon.ico" />
-    <link rel="Shortcut Icon" href="https://cdn.jsdelivr.net/gh/gdtool/zhaopp/cfblog/favicon.ico">
-  */
-  /*
-  return new Response("404",{
-      headers:{
-          "content-type":"text/plain;charset=UTF-8"
+  // 自定义 favicon：直接用我们自己的 SVG（与博客 logo 图标一致）
+  // 说明：某些浏览器/平台仍会强制请求 /favicon.ico，这里返回 SVG 也能正常显示。
+  try{
+    const svgUrl = `https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/favicon.svg`;
+    const res = await fetch(svgUrl, {cf:{cacheTtl: 3600}});
+    const svg = await res.text();
+    return new Response(svg, {
+      headers: {
+        "content-type": "image/svg+xml; charset=UTF-8",
+        "Cache-Control": "public, max-age=86400"
       },
-      status:404
-  });
-  */
-  let url = new URL(request.url)
-  url.host="dash.cloudflare.com"
-  return await fetch(new Request(url, request));
+      status: 200
+    });
+  }catch(e){
+    // fallback: old behavior
+    let url = new URL(request.url)
+    url.host="dash.cloudflare.com"
+    return await fetch(new Request(url, request));
+  }
 }
 
 //访问: robots.txt
@@ -1572,6 +1584,7 @@ async function getThemeHtml(template_path){
           font-weight:800;
           letter-spacing:.06em;
           padding:12px 16px;
+          font-size: 17px; /* +~20% */
         }
         .nav-tabs>li>a:hover{background:rgba(0,229,255,.06); color:var(--text); border-color:rgba(0,229,255,.16);} 
         .nav-tabs>li.active>a,
@@ -1586,6 +1599,7 @@ async function getThemeHtml(template_path){
         #myTab > li:first-child > a{
           font-family:var(--nav-font);
           letter-spacing:.12em;
+          font-size:18px; /* +~20% */
         }
 
         /* cards */
