@@ -86,7 +86,7 @@ const OPT = { //网站配置
   "siteDescription":"CFBLOG-Plus" ,//博客描述
   "keyWords":"cloudflare,KV,workers,blog",//关键字
   "logo":"https://cdn.jsdelivr.net/gh/Arronlong/cfblog-plus@master/themes/JustNews/files/logo2.png",//JustNews主题的logo
-  "defaultCover":"https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/covers/cover-01.svg",// 默认封面（当文章 img 为空时兜底）
+  "defaultCover":"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200&h=630",// 默认封面（当文章 img 为空时兜底）
 
   "theme_github_path":"https://cdn.jsdelivr.net/gh/Arronlong/cfblog-plus@master/themes/",//主题路径
   "themeURL" : "https://raw.githubusercontent.com/Arronlong/cfblog-plus/master/themes/JustNews/", // 模板地址,以 "/"" 结尾
@@ -937,7 +937,7 @@ async function handle_admin(request){
   if("saveAddNew"==paths[1]){
     const ret=await parseReq(request);
     let title=ret.title,//文章标题
-        img=ret.img,//插图
+        img=ret.img || `https://source.unsplash.com/featured/1200x630?abstract,technology,dark&sig=${id || Date.now()}`,//插图
         link=ret.link,//永久链接
         createDate=ret.createDate.replace('T',' '),//发布日期
         category=ret.category,//分类
@@ -1047,7 +1047,7 @@ async function handle_admin(request){
   if("saveEdit"==paths[1]){
     const ret=await parseReq(request);
     let title=ret.title,//文章标题
-        img=ret.img,//插图
+        img=ret.img || `https://source.unsplash.com/featured/1200x630?abstract,technology,dark&sig=${id || Date.now()}`,//插图
         link=ret.link,//永久链接
         createDate=ret.createDate.replace('T',' '),//发布日期
         category=ret.category,//分类
@@ -1256,7 +1256,7 @@ async function api_publish(payload){
   const contentMD = (payload.contentMD || "").trim();
   const contentHtml = (payload.contentHtml || "").trim();
   // img 可选；为空则用默认封面兜底，避免列表/侧栏破图
-  const img = ((payload.img || "").trim()) || (OPT.defaultCover || "");
+  let img = ((payload.img || "").trim()); if(!img) { img = `https://source.unsplash.com/featured/1200x630?abstract,technology,dark&sig=${Date.now()}`; }
   const link = (payload.link || "").trim();
   const category = normArr(payload.category);
   const tags = normArr(payload.tags);
