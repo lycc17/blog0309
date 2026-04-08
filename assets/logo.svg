@@ -34,26 +34,26 @@
   <g transform="translate(2,6)" filter="url(#shadow)">
     <!-- chip background -->
     <rect x="0" y="0" width="36" height="36" rx="12" fill="#070A12"/>
-    <rect x="0" y="0" width="36" height="36" rx="12" fill="url(#neon)" opacity="0.12"/>
+    <rect x="0" y="0" width="36" height="36" rx="12" fill="url(#neon)" opacity="0.14"/>
 
-    <!-- candy disc -->
-    <circle cx="18" cy="18" r="10.8" fill="#070A12" opacity="0.7"/>
-    <circle cx="18" cy="18" r="10.2" fill="url(#neon)" opacity="0.95" filter="url(#glow)"/>
+    <!-- candy disc (more colorful) -->
+    <circle cx="18" cy="18" r="10.8" fill="#0B1020" opacity="0.85"/>
+    <circle cx="18" cy="18" r="10.2" fill="url(#neon)" opacity="0.98" filter="url(#glow)"/>
 
-    <!-- diagonal stripes (clipped to disc) -->
-    <g clip-path="url(#candyClip)" opacity="0.48">
-      <rect x="-2" y="8" width="44" height="3" rx="1.5" fill="#070A12" transform="rotate(-25 18 18)"/>
-      <rect x="-2" y="15" width="44" height="3" rx="1.5" fill="#070A12" transform="rotate(-25 18 18)"/>
-      <rect x="-2" y="22" width="44" height="3" rx="1.5" fill="#070A12" transform="rotate(-25 18 18)"/>
-      <rect x="-2" y="29" width="44" height="3" rx="1.5" fill="#070A12" transform="rotate(-25 18 18)"/>
+    <!-- diagonal stripes (clipped to disc): colorful candy stripes -->
+    <g clip-path="url(#candyClip)" opacity="0.92">
+      <rect x="-2" y="9" width="44" height="3.2" rx="1.6" fill="#FFFFFF" opacity="0.22" transform="rotate(-25 18 18)"/>
+      <rect x="-2" y="16" width="44" height="3.2" rx="1.6" fill="#00E5FF" opacity="0.22" transform="rotate(-25 18 18)"/>
+      <rect x="-2" y="23" width="44" height="3.2" rx="1.6" fill="#7C4DFF" opacity="0.20" transform="rotate(-25 18 18)"/>
+      <rect x="-2" y="30" width="44" height="3.2" rx="1.6" fill="#29F5A6" opacity="0.18" transform="rotate(-25 18 18)"/>
     </g>
 
     <!-- outline ring -->
-    <circle cx="18" cy="18" r="10.2" fill="none" stroke="#D7E1FF" stroke-opacity="0.18" stroke-width="1.4"/>
+    <circle cx="18" cy="18" r="10.2" fill="none" stroke="#D7E1FF" stroke-opacity="0.22" stroke-width="1.4"/>
 
     <!-- gloss highlight -->
-    <ellipse cx="14.6" cy="14.1" rx="5.8" ry="3.8" fill="#FFFFFF" opacity="0.18"/>
-    <circle cx="25.8" cy="24.8" r="1.8" fill="#00E5FF" opacity="0.9" filter="url(#glow)"/>
+    <ellipse cx="14.6" cy="14.1" rx="6.0" ry="3.9" fill="#FFFFFF" opacity="0.22"/>
+    <circle cx="25.8" cy="24.8" r="1.9" fill="#00E5FF" opacity="0.95" filter="url(#glow)"/>
   </g>
 
   <!-- wordmark -->

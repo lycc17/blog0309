@@ -116,8 +116,8 @@ const OPT = { //网站配置
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=LXGW+WenKai:wght@400;700&display=swap" rel="stylesheet">
-  <!-- Favicon / Tab icon (match blog logo mark) -->
-  <link rel="icon" href="https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/favicon.svg" type="image/svg+xml">
+  <!-- Favicon / Tab icon (use same logo as header) -->
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/logo.svg" type="image/svg+xml">
   <!-- Fallbacks for some browsers/platforms (served by handle_favicon) -->
   <link rel="alternate icon" href="/favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
@@ -147,21 +147,26 @@ const OPT = { //网站配置
     font-family: var(--nav-font) !important;
     font-weight: var(--nav-weight) !important;
     letter-spacing: .06em;
-    font-size: 19px; /* +~20% */
+    font-size: 28.5px; /* 19px * 1.5 */
+    line-height: 1.2;
   }
   /* Login button on the right: 登录 */
   .navbar-action .login{
     font-family: var(--nav-font) !important;
     font-weight: var(--nav-weight) !important;
     letter-spacing: .08em;
-    font-size: 18px; /* +~20% */
+    font-size: 27px; /* 18px * 1.5 */
+    line-height: 1.2;
   }
 
-  /* Logo clarity */
+  /* Logo clarity (make it ~+50% bigger) */
   .logo img{
-    height: 42px;
+    height: 63px; /* 42px * 1.5 */
     width: auto;
     filter: drop-shadow(0 6px 18px rgba(0,0,0,.35));
+  }
+  @media (max-width: 768px){
+    .logo img{height: 52px;}
   }
 
   /* theme variables */
