@@ -147,26 +147,24 @@ const OPT = { //网站配置
     font-family: var(--nav-font) !important;
     font-weight: var(--nav-weight) !important;
     letter-spacing: .06em;
-    font-size: 28.5px; /* 19px * 1.5 */
-    line-height: 1.2;
+    font-size: 19px; /* keep */
   }
   /* Login button on the right: 登录 */
   .navbar-action .login{
     font-family: var(--nav-font) !important;
     font-weight: var(--nav-weight) !important;
     letter-spacing: .08em;
-    font-size: 27px; /* 18px * 1.5 */
-    line-height: 1.2;
+    font-size: 18px; /* keep */
   }
 
-  /* Logo clarity (make it ~+50% bigger) */
+  /* Logo clarity (make logo bigger; keep nav text size) */
   .logo img{
-    height: 63px; /* 42px * 1.5 */
+    height: 64px;
     width: auto;
-    filter: drop-shadow(0 6px 18px rgba(0,0,0,.35));
+    filter: drop-shadow(0 6px 18px rgba(0,0,0,.40)) saturate(1.15);
   }
   @media (max-width: 768px){
-    .logo img{height: 52px;}
+    .logo img{height: 54px;}
   }
 
   /* theme variables */
@@ -517,7 +515,8 @@ async function handle_favicon(request){
   // 自定义 favicon：直接用我们自己的 SVG（与博客 logo 图标一致）
   // 说明：某些浏览器/平台仍会强制请求 /favicon.ico，这里返回 SVG 也能正常显示。
   try{
-    const svgUrl = `https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/favicon.svg`;
+    // Use the same logo as the header for tab icon
+    const svgUrl = `https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/logo.svg`;
     const res = await fetch(svgUrl, {cf:{cacheTtl: 3600}});
     const svg = await res.text();
     return new Response(svg, {
