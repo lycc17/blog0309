@@ -116,8 +116,8 @@ const OPT = { //网站配置
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=LXGW+WenKai:wght@400;700&display=swap" rel="stylesheet">
-  <!-- Favicon / Tab icon (use same logo as header) -->
-  <link rel="icon" href="https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/logo.svg" type="image/svg+xml">
+  <!-- Favicon / Tab icon (icon only; no wordmark) -->
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/favicon.svg" type="image/svg+xml">
   <!-- Fallbacks for some browsers/platforms (served by handle_favicon) -->
   <link rel="alternate icon" href="/favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
@@ -161,17 +161,17 @@ const OPT = { //网站配置
   body>header.header .logo img{
     width:auto;
     height:auto;
-    max-height: 44px; /* slightly larger than nav text */
+    max-height: 53px; /* 44px * 1.2 */
     vertical-align: middle;
     filter: drop-shadow(0 6px 18px rgba(0,0,0,.40)) saturate(1.18);
   }
   @media (max-width: 768px){
-    body>header.header .logo img{max-height: 38px;}
+    body>header.header .logo img{max-height: 46px; /* 38px * 1.2 */}
   }
   /* keep logo container tall enough */
-  body>header.header .logo{height:72px;}
+  body>header.header .logo{height:86px;}
   @media (max-width: 768px){
-    body>header.header .logo{height:58px;}
+    body>header.header .logo{height:70px;}
   }
 
   /* theme variables */
@@ -522,8 +522,8 @@ async function handle_favicon(request){
   // 自定义 favicon：直接用我们自己的 SVG（与博客 logo 图标一致）
   // 说明：某些浏览器/平台仍会强制请求 /favicon.ico，这里返回 SVG 也能正常显示。
   try{
-    // Use the same logo as the header for tab icon
-    const svgUrl = `https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/logo.svg`;
+    // Use icon-only favicon (no wordmark) for tab icon
+    const svgUrl = `https://cdn.jsdelivr.net/gh/lycc17/blog0309@main/assets/favicon.svg`;
     const res = await fetch(svgUrl, {cf:{cacheTtl: 3600}});
     const svg = await res.text();
     return new Response(svg, {
