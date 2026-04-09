@@ -1660,17 +1660,17 @@ async function getThemeHtml(template_path){
         .jumbotron .lead{color:var(--text); opacity:.92;}
 
         /* tables (make list view easier to read) */
-        .table{background:transparent; font-size:21px;} /* ~ +50% */
+        .table{background:transparent; font-size:17px;} /* 21px * 0.8 */
         .table>thead>tr>th{
-          font-size:22px;
+          font-size:18px; /* 22px * 0.8 */
           font-weight:900;
           letter-spacing:.06em;
           color:var(--muted);
-          padding:16px 12px;
+          padding:13px 10px;
         }
         .table>tbody>tr>td, .table>tbody>tr>th{
           border-top:1px solid rgba(120,180,255,.12);
-          padding:16px 12px;
+          padding:13px 10px;
         }
         .table-striped>tbody>tr:nth-of-type(odd){background:rgba(255,255,255,.02);} 
         #articleList tr:first-child td{font-weight:900; color:var(--muted);} 
