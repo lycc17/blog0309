@@ -158,20 +158,23 @@ const OPT = { //网站配置
   }
 
   /* Logo clarity (theme has max-height:32px; override it) */
+  body>header.header .logo{
+    height:64px; /* match theme nav line-height for perfect baseline */
+    display:flex;
+    align-items:center;
+  }
+  body>header.header .logo a{display:flex; align-items:center;}
   body>header.header .logo img{
     width:auto;
     height:auto;
-    max-height: 53px; /* 44px * 1.2 */
+    max-height: 50px; /* slightly larger than nav text, but stays vertically centered */
+    margin:0;
     vertical-align: middle;
     filter: drop-shadow(0 6px 18px rgba(0,0,0,.40)) saturate(1.18);
   }
   @media (max-width: 768px){
-    body>header.header .logo img{max-height: 46px; /* 38px * 1.2 */}
-  }
-  /* keep logo container tall enough */
-  body>header.header .logo{height:86px;}
-  @media (max-width: 768px){
-    body>header.header .logo{height:70px;}
+    body>header.header .logo{height:50px;}
+    body>header.header .logo img{max-height: 40px;}
   }
 
   /* theme variables */
